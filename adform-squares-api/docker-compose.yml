@@ -1,0 +1,57 @@
+version: '3.8'
+
+networks:
+  adform-api-network:
+    name: adform-api-network
+    driver: bridge
+
+services:
+  adform-api-service:
+    container_name: adform-api
+    build:
+      context: .
+      dockerfile: Dockerfile
+    networks:
+      - adform-api-network
+    ports:
+      - "8080:8080"
+      - "8081:8081"
+    environment:
+      - ConnectionStrings__ConnectionString=${CONNECTIONSTRINGS__CONNECTIONSTRING}
+    depends_on:
+      - adform-api-sqlserver-service
+
+  adform-api-sqlserver-service:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: adform-api-sqlserver
+    networks:
+      - adform-api-network
+    ports:
+      - "1433:1433"
+    environment:
+      SA_PASSWORD: ${SA_PASSWORD}
+      ACCEPT_EULA: ${ACCEPT_EULA}
+      
+  adform-api-prometheus-service:
+    container_name: adform-api-prometheus
+    image: prom/prometheus:latest
+    networks:
+      - adform-api-network
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./etc/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    depends_on:
+      - adform-api-service
+
+  adform-api-grafana-service:
+    container_name: adform-api-grafana
+    image: grafana/grafana:latest
+    networks:
+      - adform-api-network
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./etc/grafana/provisioning:/etc/grafana/provisioning
+    depends_on: 
+      - adform-api-prometheus-service

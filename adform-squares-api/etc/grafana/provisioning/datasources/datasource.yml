@@ -1,0 +1,7 @@
+apiVersion: 1
+
+datasources:
+  - name: AdformApiPrometheus
+    type: prometheus
+    access: proxy
+    url: http://adform-api-prometheus-service:9090
